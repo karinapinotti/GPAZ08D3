@@ -1,0 +1,428 @@
+      ****************************************************
+       IDENTIFICATION                      DIVISION.
+      ****************************************************
+       PROGRAM-ID.                         GPAZ08D3.
+      ****************************************************
+       ENVIRONMENT                         DIVISION.
+      ****************************************************
+       CONFIGURATION                       SECTION.
+       SPECIAL-NAMES.
+              DECIMAL-POINT IS COMMA.
+       INPUT-OUTPUT                        SECTION.
+       FILE-CONTROL.
+           SELECT RELREPO  ASSIGN          TO RELREPO
+           FILE STATUS IS FS-RELREPO.
+      ****************************************************
+       DATA                                DIVISION.
+      ****************************************************
+       FILE                                SECTION.
+       FD  RELREPO
+           LABEL RECORD OMITTED
+           RECORDING MODE IS F
+           RECORD CONTAINS 80 CHARACTERS
+           DATA RECORD IS REG-RELREPO.
+
+       01  REG-RELREPO                     PIC X(80).
+
+       WORKING-STORAGE                     SECTION.
+           COPY VARDATA.
+
+           COPY VARTEMPO.
+
+      *-----------------------------------------------------*
+           EXEC SQL
+              INCLUDE BK002TP
+           END-EXEC
+      *-----------------------------------------------------*
+           EXEC SQL
+              INCLUDE SQLCA
+           END-EXEC
+      *-----------------------------------------------------*
+       01  INDICADORES.
+           05 ICODPROD                     PIC S9(04) COMP.
+           05 IDESCPROD                    PIC S9(04) COMP.
+           05 IUNIDPROD                    PIC S9(04) COMP.
+           05 ILOCALPROD                   PIC S9(04) COMP.
+           05 IQTDEST                      PIC S9(04) COMP.
+           05 IQTDMAX                      PIC S9(04) COMP.
+           05 IQTDMIN                      PIC S9(04) COMP.
+           05 IPRECOCOMPRA                 PIC S9(04) COMP.
+           05 IPRECOVENDA                  PIC S9(04) COMP.
+           05 IPERCOMIS                    PIC S9(04) COMP.
+      *-----------------------------------------------------*
+       01  WS-CONTADORES.
+           05 WS-CTLIDO                    PIC 9(05) COMP.
+           05 WS-CTIMP                     PIC 9(05) COMP.
+           05 WS-CTPAG                     PIC 9(05).
+      *-----------------------------------------------------*
+       01  WS-CONTADORES-FORMATADOS.
+           05 WS-CTLIDO-F                  PIC ZZ.ZZ9.
+           05 WS-CTIMP-F                   PIC ZZ.ZZ9.
+      *-----------------------------------------------------*
+       77  WS-CTLINHA                      PIC 9(02) VALUE 99.
+       77  WS-MSG                          PIC X(60).
+       77  WS-FS                           PIC X(2).
+       77  FS-RELREPO                      PIC X(02).
+       77  WS-SQLCODE                      PIC +9(09).
+       77  WS-PULALINHA                    PIC 9(03).
+       77  WS-QTDREP                       PIC 9(05).
+       77  WS-LUCRO                        PIC 9(05).
+      *-----------------------------------------------------*
+       01  WS-DATA-SYS.
+           05 WS-ANO                       PIC 99.
+           05 WS-MES                       PIC 99.
+           05 WS-DIA                       PIC 99.
+      *-----------------------------------------------------*
+       01  WS-HORA-SYS.
+           05 WS-HORA                      PIC 99.
+           05 WS-MIN                       PIC 99.
+           05 WS-SEG                       PIC 99.
+      *-----------------------------------------------------*
+       01  WS-DATA-FORMATADA.
+           05 WS-DIA                       PIC 99.
+           05 FILLER                       PIC X(01)   VALUE '/'.
+           05 WS-MES                       PIC 99.
+           05 FILLER                       PIC X(03)   VALUE '/20'.
+           05 WS-ANO                       PIC 99.
+      *-----------------------------------------------------*
+       01  WS-HORA-FORMATADA.
+           05 WS-HORA                      PIC 99.
+           05 FILLER                       PIC X(01)   VALUE ':'.
+           05 WS-MIN                       PIC 99.
+           05 FILLER                       PIC X(01)   VALUE ':'.
+           05 WS-SEG                       PIC 99.
+      *-----------------------------------------------------*
+       01  WS-CABEC1.
+           05 WS-DATA-CABEC1               PIC X(10).
+           05 FILLER                       PIC X(02)   VALUE SPACES.
+           05 WS-HORA-CABEC1               PIC X(08).
+           05 FILLER                       PIC X(13)   VALUE SPACES.
+           05 FILLER                       PIC X(18)   VALUE
+              'RESUMO DE PRODUTOS'.
+           05 FILLER                       PIC X(22)   VALUE SPACES.
+           05 FILLER                       PIC X(05)   VALUE 'PAG. '.
+           05 WS-PAG-CABEC1                PIC Z9.
+       01  WS-CABEC2.
+           05 FILLER                       PIC X(80)   VALUE ALL '-'.
+       01  WS-CABEC3.
+           05 FILLER                       PIC X(01)   VALUE SPACES.
+           05 FILLER                       PIC X(09)   VALUE
+              'CODIGO   '.
+           05 FILLER                       PIC X(09)   VALUE
+              'DESCRICAO'.
+           05 FILLER                       PIC X(23)   VALUE SPACES.
+           05 FILLER                       PIC X(38)   VALUE
+              'PRECO    LUCRO   ESTOQUE  REPOSICAO   '.
+       01  WS-CABEC4.
+           05 FILLER                       PIC X(80)   VALUE ALL '-'.
+       01  WS-LINDET.
+           05 FILLER                       PIC X(02)   VALUE SPACES.
+           05 LD-CODPROD                   PIC X(04).
+           05 FILLER                       PIC X(04)   VALUE SPACES.
+           05 LD-DESCPROD                  PIC X(20).
+           05 FILLER                       PIC X(07)   VALUE
+              '    R$ '.
+           05 LD-PRECOVENDA                PIC ZZZ.ZZ9,99.
+           05 FILLER                       PIC X(04)   VALUE SPACES.
+           05 LD-LUCRO                     PIC ZZ9,99+.
+           05 FILLER                       PIC X(03)   VALUE SPACES.
+           05 LD-QTDEST                    PIC ZZZZ9.
+           05 FILLER                       PIC X(06)   VALUE SPACES.
+           05 LD-QTDREP                    PIC ZZZZ9.
+      *-------------------------------------------------*
+       01  WS-RODAPE1.
+           05 FILLER                       PIC X(80)   VALUE ALL '-'.
+       01  WS-RODAPE2.
+           05 FILLER                       PIC X(40)   VALUE
+      *        1234567890123456789012345678901234567890
+              'INDUSTRIA SEUNOME S.A                   '.
+           05 FILLER                       PIC X(40)   VALUE
+              '        SERVIMOS BEM PARA SERVIR SEMPRE.'.
+      *---------------------------------------------------------*
+       PROCEDURE                           DIVISION.
+      *---------------------------------------------------------*
+      *000-GPAZ99D3.
+            PERFORM 010-INICIALIZAR
+            PERFORM 030-PROCESSAR          UNTIL SQLCODE = +100
+            PERFORM 030-TERMINO
+            STOP RUN
+            .
+
+      *---------------------------------------------------------*
+       010-INICIALIZAR.
+            ACCEPT WS-HORARIO-INICIAL FROM TIME
+            INITIALIZE WS-CONTADORES
+                       WS-LUCRO
+                       WS-QTDREP
+
+
+            OPEN OUTPUT RELREPO
+
+            IF FS-RELREPO NOT = '00'
+               MOVE 'ERRO ABERTURA RELREPO'
+                                           TO WS-MSG
+               MOVE FS-RELREPO             TO WS-FS
+               GO TO 999-ERRO
+            END-IF
+
+            EXEC SQL
+               DECLARE REPOSICAO CURSOR FOR
+                  SELECT   CODPROD
+                        ,  DESCPROD
+                        ,  QTDEST
+                        ,  QTDMAX
+                        ,  QTDMIN
+                        ,  PRECOCOMPRA
+                        ,  PRECOVENDA
+                  FROM TBPRODUTO
+                  WHERE QTDEST < QTDMIN
+                  ORDER BY DESCPROD
+            END-EXEC
+
+            EXEC SQL
+               OPEN REPOSICAO
+            END-EXEC
+
+            IF SQLCODE NOT = 0 AND SQLCODE NOT = +100
+               MOVE 'ERRO ABERTURA CURSOR REPOSICAO'
+                                           TO WS-MSG
+               MOVE SQLCODE                TO WS-SQLCODE
+               GO TO 999-ERRO-DB2
+            END-IF
+
+            PERFORM 999-FORMATAR-DATA-HORA
+            PERFORM 020-LER-REPOSICAO
+            .
+
+      *-----------------------------------------------------*
+       020-LER-REPOSICAO.
+            EXEC SQL
+               FETCH REPOSICAO
+                  INTO  :CODPROD
+                      , :DESCPROD
+                      , :QTDEST
+                      , :QTDMAX
+                      , :QTDMIN
+                      , :PRECOCOMPRA
+                      , :PRECOVENDA
+            END-EXEC
+
+            IF SQLCODE = 0
+               PERFORM 9000-TRATA-INDICATOR
+               ADD 1                       TO WS-CTLIDO
+            ELSE
+               IF SQLCODE NOT = +100
+                  MOVE 'ERRO LEITURA CURSOR REPOSICAO'
+                                           TO WS-MSG
+                  MOVE SQLCODE             TO WS-SQLCODE
+                  GO TO 999-ERRO-DB2
+               END-IF
+            END-IF
+            .
+
+      *----------------------------------------------------*
+       030-PROCESSAR.
+            IF WS-CTLINHA > 59
+               PERFORM 040-IMPRIME-CABECALHO
+            END-IF
+
+            PERFORM 050-IMPRIME-DETALHE
+
+            IF WS-CTLINHA = 58
+               PERFORM 060-IMPRIME-RODAPE
+            END-IF
+
+            PERFORM 020-LER-REPOSICAO
+            .
+
+      *---------------------------------------------------*
+       040-IMPRIME-CABECALHO.
+            MOVE WS-DATA-FORMATADA         TO WS-DATA-CABEC1
+            MOVE WS-HORA-FORMATADA         TO WS-HORA-CABEC1
+            ADD 1                          TO WS-CTPAG
+            MOVE WS-CTPAG                  TO WS-PAG-CABEC1
+
+            WRITE REG-RELREPO              FROM WS-CABEC1 AFTER PAGE
+            IF FS-RELREPO NOT = '00'
+               MOVE 'ERRO GRAVACAO RELREPO CABEC1'
+                                           TO WS-MSG
+               MOVE FS-RELREPO             TO WS-FS
+               GO TO 999-ERRO
+            END-IF
+
+            WRITE REG-RELREPO              FROM WS-CABEC2
+            IF FS-RELREPO NOT = '00'
+               MOVE 'ERRO GRAVACAO RELREPO CABEC2'
+                                           TO WS-MSG
+               MOVE FS-RELREPO             TO WS-FS
+               GO TO 999-ERRO
+            END-IF
+
+            WRITE REG-RELREPO              FROM WS-CABEC3
+            IF FS-RELREPO NOT = '00'
+               MOVE 'ERRO GRAVACAO RELREPO CABEC3'
+                                           TO WS-MSG
+               MOVE FS-RELREPO             TO WS-FS
+               GO TO 999-ERRO
+            END-IF
+
+            WRITE REG-RELREPO              FROM WS-CABEC4
+            IF FS-RELREPO NOT = '00'
+               MOVE 'ERRO GRAVACAO RELREPO CABEC4'
+                                           TO WS-MSG
+               MOVE FS-RELREPO             TO WS-FS
+               GO TO 999-ERRO
+            END-IF
+
+            MOVE 4                         TO WS-CTLINHA
+            .
+
+      *---------------------------------------------------*
+       050-IMPRIME-DETALHE.
+            MOVE CODPROD                   TO LD-CODPROD
+            MOVE DESCPROD                  TO LD-DESCPROD
+            MOVE PRECOVENDA                TO LD-PRECOVENDA
+            MOVE QTDEST                    TO LD-QTDEST
+
+            COMPUTE WS-QTDREP = QTDMAX - QTDMIN
+            COMPUTE WS-LUCRO = ((PRECOVENDA / PRECOCOMPRA) - 1) * 100
+
+            MOVE WS-QTDREP                 TO LD-QTDREP
+            MOVE WS-LUCRO                  TO LD-LUCRO
+
+            WRITE REG-RELREPO              FROM WS-LINDET
+            IF FS-RELREPO NOT = '00'
+               MOVE 'ERRO GRAVACAO RELREPO LINDET'
+                                           TO WS-MSG
+               MOVE FS-RELREPO             TO WS-FS
+               GO TO 999-ERRO
+            END-IF
+
+            ADD 1                          TO WS-CTIMP
+            ADD 1                          TO WS-CTLINHA
+            .
+
+      *------------------------------------------------------*
+       060-IMPRIME-RODAPE.
+            COMPUTE WS-PULALINHA = 59 - WS-CTLINHA
+
+            WRITE REG-RELREPO              FROM WS-RODAPE1
+                                           AFTER WS-PULALINHA LINES
+            IF FS-RELREPO NOT = '00'
+               MOVE 'ERRO GRAVACAO RELREPO RODAPE1'
+                                           TO WS-MSG
+               MOVE FS-RELREPO             TO WS-FS
+               GO TO 999-ERRO
+            END-IF
+
+            WRITE REG-RELREPO              FROM WS-RODAPE2
+            IF FS-RELREPO NOT = '00'
+               MOVE 'ERRO GRAVACAO RELREPO RODAPE2'
+                                           TO WS-MSG
+               MOVE FS-RELREPO             TO WS-FS
+               GO TO 999-ERRO
+            END-IF
+
+            MOVE 60                        TO WS-CTLINHA
+            .
+
+      *-------------------------------------------------------*
+       030-TERMINO.
+            IF WS-CTLINHA < 60
+               PERFORM 060-IMPRIME-RODAPE
+            END-IF
+
+
+            ACCEPT WS-HORARIO-FINAL FROM TIME
+
+            COPY CALCTEMP.
+
+            MOVE WS-CTLIDO                 TO WS-CTLIDO-F
+            MOVE WS-CTIMP                  TO WS-CTIMP-F
+
+            DISPLAY '*-------------------------------------------*'
+            DISPLAY 'QTDE. PRODUTOS LIDOS.......: ' WS-CTLIDO-F
+            DISPLAY 'QTDE. PRODUTOS IMPRESSOS...: ' WS-CTIMP-F
+            DISPLAY 'QTDE. PAGINAS..............: ' WS-CTPAG
+            DISPLAY '*-------------------------------------------*'
+            DISPLAY "TEMPO TOTAL DE PROCESSAMENTO.........: "
+                                     WS-TEMPO-PROCESSAMENTO
+            DISPLAY '*-------------------------------------------*'
+            DISPLAY '   TERMINO NORMAL DO PROGRAMA GPAZ08D2       '
+            DISPLAY '*-------------------------------------------*'
+
+            CLOSE RELREPO
+            IF FS-RELREPO NOT = '00'
+               MOVE 'ERRO FECHAMENTO RELREPO'
+                                           TO WS-MSG
+               MOVE FS-RELREPO             TO WS-FS
+               GO TO 999-ERRO
+            END-IF
+
+            EXEC SQL
+               CLOSE REPOSICAO
+            END-EXEC
+
+            IF SQLCODE NOT = 0
+               MOVE 'ERRO FECHAMENTO CURSOR REPOSICAO'
+                                           TO WS-MSG
+               MOVE SQLCODE                TO WS-SQLCODE
+               GO TO 999-ERRO-DB2
+            END-IF
+            .
+
+      *---------------------------------------------------*
+       999-FORMATAR-DATA-HORA.
+            ACCEPT WS-DATA-SYS             FROM DATE
+            ACCEPT WS-HORA-SYS             FROM TIME
+            MOVE CORRESPONDING WS-DATA-SYS TO WS-DATA-FORMATADA
+            MOVE CORRESPONDING WS-HORA-SYS TO WS-HORA-FORMATADA
+            .
+
+      *-----------------------------------------------*
+       9000-TRATA-INDICATOR.
+           IF IUNIDPROD LESS ZERO
+              MOVE SPACES                  TO UNIDPROD
+           END-IF
+           IF ILOCALPROD LESS ZERO
+              MOVE SPACES                  TO LOCALPROD
+           END-IF
+           IF IQTDEST LESS ZERO
+              MOVE ZEROS                   TO QTDEST
+           END-IF
+           IF IQTDMAX LESS ZERO
+              MOVE ZEROS                   TO QTDMAX
+           END-IF
+           IF IQTDMIN LESS ZERO
+              MOVE ZEROS                   TO QTDMIN
+           END-IF
+           IF IPRECOCOMPRA LESS ZERO
+              MOVE ZEROS                   TO PRECOCOMPRA
+           END-IF
+           IF IPRECOVENDA LESS ZERO
+              MOVE ZEROS                   TO PRECOVENDA
+           END-IF
+           IF IPERCOMIS LESS ZERO
+              MOVE ZEROS                   TO PERCOMIS
+           END-IF
+           .
+      *-----------------------------------------------*
+       999-ERRO.
+            DISPLAY 'FILE STATUS....: ' WS-FS
+            DISPLAY WS-MSG
+            DISPLAY '*----------------------------------------------*'
+            DISPLAY '    TERMINO ANORMAL DO PROGRAMA GPAZ08D3        '
+            DISPLAY '*----------------------------------------------*'
+            STOP RUN
+            .
+
+      *------------------------------------------------*
+       999-ERRO-DB2.
+            DISPLAY 'SQLCODE......: ' WS-SQLCODE
+            DISPLAY WS-MSG
+            DISPLAY '*---------------------------------------------*'
+            DISPLAY '    TERMINO ANORMAL DO PROGRAMA GPAZ08D3       '
+            DISPLAY '*---------------------------------------------*'
+            STOP RUN
+            .
+      *------------------------------------------------------*

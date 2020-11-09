@@ -1,0 +1,16 @@
+//GPAZ08D3 JOB 'KARINA',MSGCLASS=X,CLASS=C,NOTIFY=GPAZ08,TIME=1         00010000
+//STEP1A   EXEC PGM=IKJEFT01,DYNAMNBR=20,COND=(4,LT)                    00020000
+//STEPLIB  DD DISP=SHR,DSN=SYS2.DB2.SDSNLOAD                            00030000
+//DBRMLIB  DD DSN=SYS2.DB2.DBRMLIB.DATA,DISP=SHR                        00040000
+//SYSTSPRT DD SYSOUT=*                                                  00050000
+//SYSPRINT DD SYSOUT=*                                                  00060000
+//SYSUDUMP DD SYSOUT=*                                                  00070000
+//SYSOUT   DD SYSOUT=*                                                  00080000
+//REPORT   DD SYSOUT=*                                                  00090000
+//SYSTSIN  DD *                                                         00100000
+ DSN SYSTEM(DB2N)                                                       00110000
+ RUN  PROGRAM(GPAZ08D3) PLAN(GPAZ08D3) -                                00120000
+      LIB('GP.GERAL.LOADLIB')                                           00130000
+ END                                                                    00140000
+//RELREPO  DD SYSOUT=*                                                  00150000
+//                                                                      00160000
